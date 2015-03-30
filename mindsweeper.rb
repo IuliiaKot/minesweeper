@@ -10,13 +10,15 @@ class Board
     @display_board = []
   end
 
+  def square_by_index(pos)
+    neighbor = board[pos[0]][pos[1]]
+  end
+
   def make_board
     self.board = Array.new(height) {Array.new(width)}
-
     9.times do |i|
       9.times do |j|
         board[i][j] = Square.new([i,j])
-        #p Square.new([i,j])
       end
     end
 
@@ -25,16 +27,23 @@ class Board
       y = rand(0..8)
       board[x][y].bomb = true
     end
-
-   board
+    board
   end
+
+
+
+
+
 
   def adjacent_bombs(square)
     neighbors = square.neighbor_squares
     near_bombs = 0
     neighbors.each do |(x, y)|
-    near_bombs += 1 if board[x][y].bomb
+      near_bombs += 1 if board[x][y].bomb
     end
+    square.set_number(near_bombs)
+
+
     near_bombs
   end
 
@@ -55,30 +64,21 @@ class Board
 
     end
     checked_squares
-    # checked_squares.each do |line|
-    #     p line.pos
-    #   end
   end
 
 
-  def square_by_index(pos)
-    neighbor = board[pos[0]][pos[1]]
-
-  end
 
   def print_board
     self.display_board = Array.new(height) {Array.new(width)}
     board.each do |line|
       line.each_with_index do |el, idx|
 
-        el.add_board(board)
-
         if el.revealed
-          self.display_board[el.pos[0]][el.pos[1]] = el.number
+          self.display_board[el.pos[0]][el.pos[1]] = el.get_number
         elsif el.flagged
           self.display_board[el.pos[0]][el.pos[1]] = 'F'
         else
-          self.display_board[el.pos[0]][el.pos[1]] = '*'
+          self.display_board[el.pos[0]][el.pos[1]] = el.bomb
         end
       end
     end
@@ -134,18 +134,15 @@ class Square
   attr_accessor :pos, :bomb, :flagged, :revealed, :number, :board
 
   def initialize(pos, board=nil)
-    @board = board
     @pos = pos
     @bomb =  false
     @revealed = false
     @flagged = false
-    @number = board.adjacent_bombs(self) if board
+    #@number = board.adjacent_bombs(self) if board
   end
 
 
-  def add_board(board)
-    @board = board
-  end
+
 
   def neighbor_squares
     neighbors = []
@@ -157,8 +154,13 @@ class Square
     neighbors
   end
 
-  def number
-    @number = board.adjacent_bombs(self)
+
+
+  def set_number(near_bombs)
+    @number = near_bombs
+  end
+
+  def get_number
     @number
   end
 
@@ -178,12 +180,6 @@ class Square
       end
     end
   end
-
-
-
-
-
-
 end
 
 
