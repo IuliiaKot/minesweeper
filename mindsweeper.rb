@@ -1,16 +1,17 @@
 class Board
 
-  attr_reader :height, :width, :bombs, :board
+  attr_accessor :height, :width, :bombs, :board, :display_board
 
   def initialize(height=9, width=9, bombs=10)
     @height = height
     @width = width
     @bombs = bombs
     @board = make_board
+    @display_board = []
   end
 
   def make_board
-    board = Array.new(height) {Array.new(width)}
+    self.board = Array.new(height) {Array.new(width)}
 
     9.times do |i|
       9.times do |j|
@@ -48,6 +49,7 @@ class Board
       next if checked_squares.include?(neighbor)
       checked_squares << neighbor
 
+      p adjacent_bombs(neighbor)
       next if adjacent_bombs(neighbor) > 0
       neighbors.concat(neighbor.neighbor_squares)
 
@@ -65,17 +67,57 @@ class Board
   end
 
   def print_board
-    display_board = Array.new(height) {Array.new(width)}
+    self.display_board = Array.new(height) {Array.new(width)}
     board.each do |line|
-      line.each_with_index do |pos, idx|
-        display_board[pos.pos[0]][pos.pos[1]] = pos.bomb
+      line.each_with_index do |el, idx|
+
+        el.add_board(board)
+
+        if el.revealed
+          self.display_board[el.pos[0]][el.pos[1]] = el.number
+        elsif el.flagged
+          self.display_board[el.pos[0]][el.pos[1]] = 'F'
+        else
+          self.display_board[el.pos[0]][el.pos[1]] = '*'
+        end
       end
     end
+
     display_board.each { |line| p line }
   end
 
 
+
+
+
+  def reveal_at_pos(pos)
+    square_by_index(pos).reveal
+    p square_by_index(pos)
+  end
+
+
+  def flag_at_pos(pos)
+    square_by_index(pos).toggle_flag
+    p square_by_index(pos)
+  end
+
+
+
+
+
+
+
 end
+
+
+
+
+
+
+
+
+
+
 
 class Square
   NEIGHBORS = [
@@ -89,14 +131,20 @@ class Square
     [0, -1]
   ]
 
-  attr_accessor :pos, :bomb, :flag, :chosen, :number
+  attr_accessor :pos, :bomb, :flagged, :revealed, :number, :board
 
   def initialize(pos, board=nil)
+    @board = board
     @pos = pos
     @bomb =  false
-    @chosen = false
-    @flag = false
+    @revealed = false
+    @flagged = false
     @number = board.adjacent_bombs(self) if board
+  end
+
+
+  def add_board(board)
+    @board = board
   end
 
   def neighbor_squares
@@ -108,6 +156,31 @@ class Square
     end
     neighbors
   end
+
+  def number
+    @number = board.adjacent_bombs(self)
+    @number
+  end
+
+
+
+  def reveal
+    self.revealed = true
+  end
+
+
+  def toggle_flag
+    unless self.revealed
+      if self.flagged
+        self.flagged = false
+      else
+        self.flagged = true
+      end
+    end
+  end
+
+
+
 
 
 
@@ -123,6 +196,13 @@ board.print_board
 
 square = Square.new([0,0], board)
 
-p board.adjacent_bombs(square)
+board.reveal_at_pos(square.pos)
+board.flag_at_pos(square.pos)
+board.reveal_at_pos([1,0])
+board.flag_at_pos([0,1])
 
+p board.adjacent_bombs(square)
 p board.check_neighbors(square)
+
+
+board.print_board
